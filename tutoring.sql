@@ -24,7 +24,7 @@ VALUES ('Jordan Lee', 'jordan.lee@example.edu');
 INSERT OR IGNORE INTO students (student_name, student_email)
 VALUES ('Avery Patel', 'avery.patel@example.edu');
 
--- Jordan Lee = student_id 1; Avery Patel = student_id 2
+-- Jordan = student_id 1, Avery = student_id 2
 INSERT INTO tutoring_requests
   (student_id, course, topic, preferred_date, preferred_time)
 VALUES
@@ -65,14 +65,14 @@ JOIN students AS s ON r.student_id = s.student_id
 ORDER BY r.preferred_date;
 
 -- Part 4: Update one request
--- Revise Jordan's first open request (request_id = 1)
+-- Change Jordan's first request
 UPDATE tutoring_requests
 SET topic = 'Forms and validation',
     preferred_date = '2026-11-16',
     preferred_time = '15:00'
 WHERE request_id = 1;
 
--- Cancel Avery's request (request_id = 3)
+-- Set Avery's request to Cancelled
 UPDATE tutoring_requests
 SET status = 'Cancelled'
 WHERE request_id = 3;
@@ -83,6 +83,6 @@ INSERT INTO tutoring_requests
 VALUES
   (1, 'IS 6465', 'Delete Practice', '2026-11-22', '09:00');
 
--- Test request is request_id = 4 on a fresh database
+-- On a fresh db this test row is request_id 4
 DELETE FROM tutoring_requests
 WHERE request_id = 4;

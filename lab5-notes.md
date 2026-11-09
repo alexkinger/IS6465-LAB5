@@ -29,15 +29,15 @@ CREATE TABLE tutoring_requests (
 
 ### Which column is the primary key in each table?
 
-In the `students` table, `student_id` is the primary key. In the `tutoring_requests` table, `request_id` is the primary key. Each primary key uniquely identifies one row in its table.
+`student_id` is the primary key in `students`. `request_id` is the primary key in `tutoring_requests`. That ID is what uniquely identifies each row.
 
 ### Which column is the foreign key, and what relationship does it represent?
 
-`student_id` in `tutoring_requests` is the foreign key. It references `students(student_id)`. This creates a one-to-many relationship: one student can submit many tutoring requests, and each request belongs to exactly one student.
+`student_id` in `tutoring_requests` is the foreign key. It points to `students(student_id)`. One student can have many requests. Each request belongs to one student.
 
 ### Why is student_email marked UNIQUE?
 
-`student_email` is marked UNIQUE so two student rows cannot use the same email address. That keeps each student identity clear and supports find-or-create logic later, when the app looks up a student by email before inserting a new request.
+So two students cannot share the same email. That keeps each person as one row, and later the app can look someone up by email without creating duplicates.
 
 ## Part 2: Insert students and tutoring requests
 
@@ -85,7 +85,7 @@ request_id  student_id  course   topic        preferred_date  preferred_time  st
 
 ### Why does Jordan have one student row but two request rows?
 
-Jordan is stored once in `students` because a student is a single person with one email. Each tutoring request is its own row in `tutoring_requests`, linked back to Jordan through `student_id = 1`. That avoids repeating Jordan's name and email for every request and is the one-to-many relationship the foreign key supports.
+Jordan is one person, so he only needs one row in `students`. He submitted two tutoring requests, so those are two rows in `tutoring_requests`. Both use `student_id = 1` to point back to him. That way we do not copy his name and email into every request.
 
 ## Part 3: Read the stored data
 
@@ -116,15 +116,15 @@ request_id  student_name  student_email            course   topic        preferr
 
 ### What does the JOIN condition connect?
 
-The JOIN condition `r.student_id = s.student_id` connects each tutoring request to the matching student row. It follows the foreign key so the result can show the student's name and email next to request details without storing that student data again in every request row.
+`r.student_id = s.student_id` matches each request to the right student. That is how we can show the student name and email next to the request without storing that info twice.
 
 ### What is the difference between the purpose of JOIN and WHERE?
 
-JOIN combines related rows from two tables based on a matching key. WHERE filters which rows are returned after that combination (or from a single table). For example, JOIN brings student and request data together, while `WHERE status = 'Open'` would limit the result to open requests only.
+JOIN pulls related rows from two tables together using a matching key. WHERE filters the rows you get back. JOIN connects the tables. WHERE narrows the result, like only showing Open requests.
 
 ### Why should the application retrieve one request by request_id instead of by topic alone?
 
-`request_id` uniquely identifies one request. A topic like "Forms" could match more than one request, so looking up by topic alone could return the wrong row or multiple rows. Using `request_id` makes confirmation and edit pages load exactly one intended request.
+`request_id` is unique. A topic like Forms could show up more than once. If you search by topic only, you might get the wrong request or more than one. Using `request_id` gets the exact row you need for a confirmation or edit page.
 
 ## Part 4: Update one request
 
@@ -170,11 +170,11 @@ request_id  student_id  topic        status
 
 ### Why is a specific WHERE clause essential in an UPDATE statement?
 
-Without a specific WHERE clause, SQLite would update every row in the table. Using `WHERE request_id = ...` limits the change to one request so other students' data is not changed by accident.
+If you leave WHERE out, SQLite updates every row in the table. `WHERE request_id = ...` keeps the change on one request so you do not mess up everyone else's data.
 
 ### Why does the Peer Tutoring Hub use a Cancelled status instead of immediately deleting a real request?
 
-Cancelling keeps the request history in the database. Staff can still see that the request existed, when it was made, and that the student cancelled it. Deleting the row would remove that record and make reporting and follow-up harder.
+Cancel keeps the history. You can still see that the request happened and that it was cancelled. If you delete it, that record is gone and you lose that trail.
 
 ## Part 5: Delete one test request
 
@@ -219,29 +219,29 @@ request_id  topic                 status
 
 ### Why is a WHERE clause essential in a DELETE statement?
 
-Without WHERE, DELETE would remove every row in the table. The WHERE clause targets only the test request so the real tutoring requests stay in the database.
+Without WHERE, DELETE wipes the whole table. The WHERE clause makes sure you only remove the test request and leave the real ones alone.
 
 ## Part 6: Reflect on the CRUD workflow
 
 | CRUD action | SQL statement used in this lab | Peer Tutoring Hub example |
 |---|---|---|
-| Create | `INSERT INTO students ...` and `INSERT INTO tutoring_requests ...` | A student submits the tutoring request form and a new request row is saved |
-| Read | `SELECT ... JOIN ... WHERE ...` | The requests list or confirmation page shows request details with the student name and email |
-| Update | `UPDATE tutoring_requests SET ... WHERE request_id = ...` | A student revises topic/date/time, or a request status is changed to Cancelled |
-| Delete | `DELETE FROM tutoring_requests WHERE request_id = ...` | Removing a test record during development or cleanup (real cancels usually update status instead) |
+| Create | `INSERT INTO students ...` and `INSERT INTO tutoring_requests ...` | Student fills out the request form and a new request gets saved |
+| Read | `SELECT ... JOIN ... WHERE ...` | Requests list or confirmation page shows the request plus the student name and email |
+| Update | `UPDATE tutoring_requests SET ... WHERE request_id = ...` | Student edits topic/date/time, or status gets changed to Cancelled |
+| Delete | `DELETE FROM tutoring_requests WHERE request_id = ...` | Removing a test row while practicing (real cancels usually just change status) |
 
 ### How does the database preserve the connection between a student and that student's requests?
 
-It stores `student_id` as a foreign key on each tutoring request. That ID points back to the matching primary key in `students`, so every request stays linked to the student who submitted it even though the name and email live in only one place.
+Each request stores a `student_id` foreign key. That ID matches the primary key in `students`. So the request stays tied to the right person even though the name and email only live in the students table.
 
 ### Which database constraint prevents two student rows from using the same email address?
 
-The UNIQUE constraint on `student_email` prevents duplicate email addresses.
+The UNIQUE constraint on `student_email`.
 
 ### What could happen if an UPDATE or DELETE statement did not include a WHERE clause?
 
-Every row in the table could be changed or deleted. For example, all requests could become Cancelled, or the entire `tutoring_requests` table could be emptied.
+You could change or delete every row. All requests could get set to Cancelled, or the whole `tutoring_requests` table could get wiped.
 
 ### When the application later receives values from an HTML form, why should PHP send those values as parameters instead of placing them directly into SQL text?
 
-Putting form values directly into SQL text opens the door to SQL injection, because a user could submit malicious SQL as input. Prepared statements with parameters keep the SQL command separate from the submitted values, so the database treats the input as data instead of executable SQL.
+If you drop form input straight into SQL, someone can submit malicious SQL (SQL injection). Parameters keep the command and the user values separate, so the database treats the input as data, not as code to run.
